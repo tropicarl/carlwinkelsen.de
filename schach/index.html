@@ -13,7 +13,8 @@
       "imports": {
         "react": "https://esm.sh/react@18",
         "react-dom/client": "https://esm.sh/react-dom@18/client",
-        "lucide-react": "https://esm.sh/lucide-react?external=react"
+        "lucide-react": "https://esm.sh/lucide-react?external=react",
+        "peerjs": "https://esm.sh/peerjs"
       }
     }
     </script>
@@ -21,7 +22,13 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body class="bg-slate-900 m-0 min-h-screen">
-    <div id="root"></div>
+    <div id="root">
+        <!-- Dieser Inhalt wird angezeigt, während Babel & React laden -->
+        <div class="flex flex-col items-center justify-center min-h-screen text-white">
+            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-xl font-sans opacity-50">PixieChex wird vorbereitet...</p>
+        </div>
+    </div>
 
     <script>
         // Debug-Hilfe: Warnung bei lokalem Dateizugriff

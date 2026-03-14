@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
+import Peer from 'peerjs';
 
 console.log("PixieChex: Initialisiere App...");
 
-import { RotateCcw, Settings, Save, Trash2, X, Upload, Image as ImageIcon, Palette, Clock, ArrowLeft, Infinity as InfinityIcon, User, LogOut } from 'lucide-react';
+import { RotateCcw, Settings, Save, Trash2, X, Upload, Image as ImageIcon, Palette, Clock, ArrowLeft, Infinity as InfinityIcon, User, LogOut, RefreshCw, Link as LinkIcon, Wifi, WifiOff, Copy } from 'lucide-react';
 
 const PIECE_NAMES = {
   'K': 'Weißer König', 'Q': 'Weiße Dame', 'R': 'Weißer Turm', 'B': 'Weißer Läufer', 'N': 'Weißer Springer', 'P': 'Weißer Bauer',
@@ -275,6 +276,69 @@ const App = () => {
   const [whiteTime, setWhiteTime] = useState(600);
   const [blackTime, setBlackTime] = useState(600);
   const [hasFirstMoveHappened, setHasFirstMoveHappened] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [roomId, setRoomId] = useState(null);
+  const [peer, setPeer] = useState(null);
+  const [conn, setConn] = useState(null);
+  const [myColor, setMyColor] = useState(null); // 'white', 'black' oder null für lokal
+  const [joinId, setJoinId] = useState('');
+
+  // Refs für Online-Synchronität (verhindert stale closures)
+  const moveHandlerRef = useRef();
+  const gameStateRef = useRef();
+
+  // Aktuellen State in Ref synchronisieren
+  useEffect(() => {
+    gameStateRef.current = { board, turn, enPassant, castling, hasFirstMoveHappened };
+  }, [board, turn, enPassant, castling, hasFirstMoveHappened]);
+
+  // PeerJS Initialisierung
+  useEffect(() => {
+    const newPeer = new Peer();
+    newPeer.on('open', (id) => setRoomId(id));
+    
+    newPeer.on('connection', (connection) => {
+      setConn(connection);
+      setMyColor('white'); // Der Host ist standardmäßig Weiß
+      setGameStarted(true);
+      
+      connection.on('data', (data) => {
+        if (data.type === 'move') {
+          // Nutzt die Ref, um die aktuellste Logik/State zu verwenden
+          if (moveHandlerRef.current) {
+            moveHandlerRef.current(data.fromRow, data.fromCol, data.toRow, data.toCol, false);
+          }
+        }
+      });
+    });
+
+    setPeer(newPeer);
+    return () => newPeer.destroy();
+  }, []);
+
+  const connectToPeer = (targetId) => {
+    if (!targetId || !peer) return;
+    const connection = peer.connect(targetId);
+    
+    connection.on('open', () => {
+      setConn(connection);
+      setMyColor('black'); // Wer beitritt, spielt Schwarz
+      setGameStarted(true);
+      setIsFlipped(true); // Brett für Schwarz automatisch drehen
+      
+      connection.on('data', (data) => {
+        if (data.type === 'move') {
+          if (moveHandlerRef.current) {
+            moveHandlerRef.current(data.fromRow, data.fromCol, data.toRow, data.toCol, false);
+          }
+        }
+      });
+    });
+
+    connection.on('error', (err) => {
+      alert("Verbindung fehlgeschlagen: " + err.message);
+    });
+  };
 
   useEffect(() => {
     // Lädt Assets direkt aus dem LocalStorage beim Start
@@ -577,10 +641,90 @@ const App = () => {
     return !isInCheck(color, newBoard);
   };
 
+  const executeMove = (fromRow, fromCol, toRow, toCol, isLocalMove) => {
+    // Nutze Ref-Werte für die Berechnung (wichtig für Online-Züge)
+    const current = gameStateRef.current;
+    
+    if (!current.hasFirstMoveHappened) setHasFirstMoveHappened(true);
+    
+    const newBoard = current.board.map(row => [...row]);
+    const piece = newBoard[fromRow][fromCol];
+    if (!piece) return; // Sicherheitsscheck
+    
+    const captured = newBoard[toRow][toCol];
+    
+    newBoard[toRow][toCol] = piece;
+    newBoard[fromRow][fromCol] = null;
+
+    // En Passant geschlagene Figur entfernen
+    if (piece.toLowerCase() === 'p' && current.enPassant && toRow === current.enPassant[0] && toCol === current.enPassant[1] && !captured) {
+      newBoard[fromRow][toCol] = null;
+    }
+
+    let newEnPassant = null;
+    if (piece.toLowerCase() === 'p' && (toRow === 0 || toRow === 7)) {
+      newBoard[toRow][toCol] = isWhite(piece) ? 'Q' : 'q';
+    }
+    if (piece.toLowerCase() === 'p' && Math.abs(fromRow - toRow) === 2) {
+      newEnPassant = [fromRow + (toRow - fromRow) / 2, toCol];
+    }
+    if (piece.toLowerCase() === 'k' && Math.abs(fromCol - toCol) === 2) {
+      if (toCol === 6) {
+        newBoard[fromRow][5] = newBoard[fromRow][7];
+        newBoard[fromRow][7] = null;
+      } else if (toCol === 2) {
+        newBoard[fromRow][3] = newBoard[fromRow][0];
+        newBoard[fromRow][0] = null;
+      }
+    }
+
+    const newCastling = JSON.parse(JSON.stringify(current.castling));
+    if (piece === 'K') newCastling.white = { kingside: false, queenside: false };
+    else if (piece === 'k') newCastling.black = { kingside: false, queenside: false };
+    
+    // Rochade-Rechte verlieren, wenn ein Turm bewegt wird
+    if (piece === 'R' && fromRow === 7 && fromCol === 7) newCastling.white.kingside = false;
+    if (piece === 'R' && fromRow === 7 && fromCol === 0) newCastling.white.queenside = false;
+    if (piece === 'r' && fromRow === 0 && fromCol === 7) newCastling.black.kingside = false;
+    if (piece === 'r' && fromRow === 0 && fromCol === 0) newCastling.black.queenside = false;
+
+    // Rochade-Rechte verlieren, wenn ein Turm geschlagen wird
+    if (toRow === 0 && toCol === 0) newCastling.black.queenside = false;
+    if (toRow === 0 && toCol === 7) newCastling.black.kingside = false;
+    if (toRow === 7 && toCol === 0) newCastling.white.queenside = false;
+    if (toRow === 7 && toCol === 7) newCastling.white.kingside = false;
+
+    setBoard(newBoard);
+    setEnPassant(newEnPassant);
+    setCastling(newCastling);
+    
+    const nextTurn = current.turn === 'white' ? 'black' : 'white';
+    setTurn(nextTurn);
+
+    setTimeout(() => checkGameOver(newBoard, nextTurn), 0);
+    
+    // Sende Zug an den Partner, wenn es ein lokaler Zug war
+    if (conn && isLocalMove) {
+        conn.send({
+            type: 'move',
+            fromRow, fromCol, toRow, toCol
+        });
+    }
+  };
+
+  // Move-Handler für Refs bereitstellen
+  useEffect(() => {
+    moveHandlerRef.current = executeMove;
+  }, [board, turn, enPassant, castling, conn]);
+
+  const makeMove = (fromRow, fromCol, toRow, toCol) => {
+    executeMove(fromRow, fromCol, toRow, toCol, true);
+  };
+
   const handleDragStart = (e, row, col) => {
     e.dataTransfer.setData('move', JSON.stringify([row, col]));
     e.dataTransfer.effectAllowed = 'move';
-    
+
     // Figur auswählen, um gültige Züge anzuzeigen
     const piece = board[row][col];
     if (piece && ((turn === 'white' && isWhite(piece)) || (turn === 'black' && !isWhite(piece)))) {
@@ -622,6 +766,9 @@ const App = () => {
     if (gameOver) return;
     setDragStart(null);
 
+    // Im Online-Modus: Nur eigene Figuren ziehen
+    if (myColor && turn !== myColor && !selected) return;
+
     if (selected) {
       const [sr, sc] = selected;
       
@@ -645,60 +792,6 @@ const App = () => {
     }
   };
 
-  const makeMove = (fromRow, fromCol, toRow, toCol) => {
-    if (!hasFirstMoveHappened) setHasFirstMoveHappened(true);
-    const newBoard = board.map(row => [...row]);
-    const piece = newBoard[fromRow][fromCol];
-    const captured = newBoard[toRow][toCol];
-    
-    newBoard[toRow][toCol] = piece;
-    newBoard[fromRow][fromCol] = null;
-
-    let newEnPassant = null;
-
-    if (piece.toLowerCase() === 'p' && (toRow === 0 || toRow === 7)) {
-      newBoard[toRow][toCol] = isWhite(piece) ? 'Q' : 'q';
-    }
-
-    if (piece.toLowerCase() === 'p' && Math.abs(fromRow - toRow) === 2) {
-      newEnPassant = [fromRow + (toRow - fromRow) / 2, toCol];
-    }
-
-    if (piece.toLowerCase() === 'p' && enPassant && 
-        toRow === enPassant[0] && toCol === enPassant[1] && !captured) {
-      newBoard[fromRow][toCol] = null;
-    }
-
-    if (piece.toLowerCase() === 'k' && Math.abs(fromCol - toCol) === 2) {
-      if (toCol === 6) {
-        newBoard[fromRow][5] = newBoard[fromRow][7];
-        newBoard[fromRow][7] = null;
-      } else if (toCol === 2) {
-        newBoard[fromRow][3] = newBoard[fromRow][0];
-        newBoard[fromRow][0] = null;
-      }
-    }
-
-    const newCastling = JSON.parse(JSON.stringify(castling));
-    if (piece === 'K') {
-      newCastling.white = { kingside: false, queenside: false };
-    } else if (piece === 'k') {
-      newCastling.black = { kingside: false, queenside: false };
-    }
-    if (piece === 'R' && fromRow === 7 && fromCol === 7) newCastling.white.kingside = false;
-    if (piece === 'R' && fromRow === 7 && fromCol === 0) newCastling.white.queenside = false;
-    if (piece === 'r' && fromRow === 0 && fromCol === 7) newCastling.black.kingside = false;
-    if (piece === 'r' && fromRow === 0 && fromCol === 0) newCastling.black.queenside = false;
-
-    setBoard(newBoard);
-    setEnPassant(newEnPassant);
-    setCastling(newCastling);
-    
-    const nextTurn = turn === 'white' ? 'black' : 'white';
-    setTurn(nextTurn);
-
-    setTimeout(() => checkGameOver(newBoard, nextTurn), 0);
-  };
 
   const checkGameOver = (testBoard, color) => {
     let hasLegalMove = false;
@@ -782,6 +875,31 @@ const App = () => {
       <div className="flex flex-col items-center justify-center h-screen w-screen bg-gradient-to-br from-slate-800 to-slate-900 p-4 text-white">
         <h1 className="text-5xl font-bold mb-8">pixichess</h1>
         <div className="bg-slate-700 p-8 rounded-xl shadow-2xl w-full max-w-md">
+          <div className="mb-6 p-4 bg-slate-800/50 rounded-lg border border-slate-600">
+              <h3 className="text-sm font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+                  <Wifi size={14} /> Online-Multiplayer
+              </h3>
+              <div className="flex flex-col gap-4">
+                  <div>
+                      <p className="text-xs text-slate-400 mb-1">Deine ID (an Freund senden):</p>
+                      <div className="flex items-center gap-2 bg-slate-900 p-2 rounded border border-slate-700">
+                          <code className="flex-1 text-blue-400 font-bold truncate">{roomId || 'Lade...'}</code>
+                          <button onClick={() => navigator.clipboard.writeText(roomId)} className="p-1 hover:text-blue-400 transition-colors" title="Kopieren">
+                              <Copy size={16}/>
+                          </button>
+                      </div>
+                  </div>
+                  <div className="h-px bg-slate-600 my-1"></div>
+                  <div>
+                      <p className="text-xs text-slate-400 mb-1">Beitreten:</p>
+                      <div className="flex gap-2">
+                          <input type="text" placeholder="ID vom Freund..." className="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" value={joinId} onChange={(e) => setJoinId(e.target.value)} />
+                          <button onClick={() => connectToPeer(joinId)} className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold transition-colors">OK</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
           <h2 className="text-2xl font-bold mb-6 text-center flex items-center justify-center gap-2">
             <Clock /> Spielmodus wählen
           </h2>
@@ -834,7 +952,7 @@ const App = () => {
           width: boardSize, 
           height: boardSize
         }}>
-          <div className="grid grid-cols-8 grid-rows-8 relative w-full h-full pixelated" style={{ 
+          <div className={`grid grid-cols-8 grid-rows-8 relative w-full h-full pixelated transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''}`} style={{
             backgroundImage: `url(${customAssets.board || 'assets/board.svg'})`,
             backgroundColor: '#475569', // Fallback Farbe falls das Bild fehlt
             backgroundSize: 'cover'
@@ -868,7 +986,7 @@ const App = () => {
                     }}
                   >
                     {piece && (
-                      <div className={`w-full h-full flex items-center justify-center ${(dragStart && dragStart[0] === rowIdx && dragStart[1] === colIdx) ? 'opacity-0' : 'opacity-100'}`}>
+                      <div className={`w-full h-full flex items-center justify-center transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''} ${(dragStart && dragStart[0] === rowIdx && dragStart[1] === colIdx) ? 'opacity-0' : 'opacity-100'}`}>
                         <img 
                           src={getPieceSrc(piece)} 
                           className="w-full h-full object-contain pixelated" 
@@ -888,13 +1006,22 @@ const App = () => {
           </div>
         </div>
 
-        <button
-          onClick={() => resetGame()}
-          className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
-        >
-          <RotateCcw size={18} />
-          Neues Spiel
-        </button>
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => resetGame()}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+          >
+            <RotateCcw size={18} />
+            Reset
+          </button>
+          <button
+            onClick={() => setIsFlipped(!isFlipped)}
+            className="bg-slate-600 hover:bg-slate-500 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+            title="Ansicht drehen"
+          >
+            <RefreshCw size={18} />
+          </button>
+        </div>
       </div>
 
       {initialTime !== null && (
