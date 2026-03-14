@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { RotateCcw, Settings, Save, Trash2, X, Upload, Image as ImageIcon, Palette, Clock, ArrowLeft, Infinity, User, LogOut } from 'lucide-react';
+
+console.log("PixieChex: Initialisiere App...");
+
+import { RotateCcw, Settings, Save, Trash2, X, Upload, Image as ImageIcon, Palette, Clock, ArrowLeft, Infinity as InfinityIcon, User, LogOut } from 'lucide-react';
 
 const PIECE_NAMES = {
   'K': 'Weißer König', 'Q': 'Weiße Dame', 'R': 'Weißer Turm', 'B': 'Weißer Läufer', 'N': 'Weißer Springer', 'P': 'Weißer Bauer',
@@ -372,8 +375,17 @@ const App = () => {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  const getPieceSrc = (piece) => {
+    if (customAssets.pieces[piece]) return customAssets.pieces[piece];
+    const isBlack = piece === piece.toLowerCase();
+    const char = piece.toLowerCase();
+    // Hier kannst du .svg in .png ändern, falls deine Dateien anders enden
+    return `assets/${isBlack ? 'b' : ''}${char}.svg`;
+  };
+
   const getPieceLabel = (piece) => {
-    return piece.toUpperCase();
+    // Gibt 'P' für Weiß und 'p' für Schwarz zurück, damit man sie unterscheiden kann
+    return piece;
   };
 
   const isWhite = (piece) => piece && piece === piece.toUpperCase();
@@ -779,7 +791,7 @@ const App = () => {
             <button onClick={() => startGame(300)} className="bg-slate-600 hover:bg-blue-600 p-4 rounded-lg font-bold transition-colors">5 min (Blitz)</button>
             <button onClick={() => startGame(600)} className="bg-slate-600 hover:bg-blue-600 p-4 rounded-lg font-bold transition-colors">10 min (Rapid)</button>
             <button onClick={() => startGame(1800)} className="bg-slate-600 hover:bg-blue-600 p-4 rounded-lg font-bold transition-colors">30 min (Classical)</button>
-            <button onClick={() => startGame(null)} className="bg-slate-600 hover:bg-green-600 p-4 rounded-lg font-bold transition-colors flex items-center justify-center gap-2"><Infinity size={20}/> Zen Modus</button>
+            <button onClick={() => startGame(null)} className="bg-slate-600 hover:bg-green-600 p-4 rounded-lg font-bold transition-colors flex items-center justify-center gap-2"><InfinityIcon size={20}/> Zen Modus</button>
           </div>
           <button onClick={() => setShowCMS(true)} className="mt-6 w-full bg-slate-800 hover:bg-slate-600 p-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors text-slate-300">
              <Settings size={18} /> Einstellungen
@@ -823,7 +835,8 @@ const App = () => {
           height: boardSize
         }}>
           <div className="grid grid-cols-8 grid-rows-8 relative w-full h-full pixelated" style={{ 
-            backgroundImage: customAssets.board ? `url(${customAssets.board})` : 'none',
+            backgroundImage: `url(${customAssets.board || 'assets/board.svg'})`,
+            backgroundColor: '#475569', // Fallback Farbe falls das Bild fehlt
             backgroundSize: 'cover'
           }}>
             {board.map((row, rowIdx) => (
@@ -844,7 +857,7 @@ const App = () => {
                     draggable={!!isTurn}
                     className={`
                       flex items-center justify-center cursor-pointer relative
-                      ${isSelected ? 'ring-2 ring-inset ring-blue-500 z-20' : ''}
+                      ${isSelected ? 'bg-blue-500/30 ring-2 ring-inset ring-blue-500 z-20' : ''}
                       ${isValidMove ? 'ring-2 ring-inset ring-green-400 z-10' : ''}
                       hover:opacity-80 transition-all
                     `}
@@ -856,18 +869,16 @@ const App = () => {
                   >
                     {piece && (
                       <div className={`w-full h-full flex items-center justify-center ${(dragStart && dragStart[0] === rowIdx && dragStart[1] === colIdx) ? 'opacity-0' : 'opacity-100'}`}>
-                      {
-                      customAssets.pieces[piece] ? (
-                        <img src={customAssets.pieces[piece]} className="w-full h-full object-contain pixelated" />
-                      ) : (
-                        <span 
-                          className={`font-bold text-xs ${isWhite(piece) ? 'text-white' : 'text-black'}`}
-                          style={{ textShadow: isWhite(piece) ? '0 0 2px black' : 'none' }}
-                        >
-                          {getPieceLabel(piece)}
-                        </span>
-                      )
-                      }
+                        <img 
+                          src={getPieceSrc(piece)} 
+                          className="w-full h-full object-contain pixelated" 
+                          onError={(e) => { 
+                            console.warn("Bild nicht gefunden:", e.target.src);
+                            e.target.style.display = 'none'; 
+                            e.target.nextSibling.classList.remove('hidden'); 
+                          }}
+                        />
+                        <span className="hidden font-bold text-lg">{getPieceLabel(piece)}</span>
                       </div>
                     )}
                   </div>

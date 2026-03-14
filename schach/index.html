@@ -5,9 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PixieChex Schach</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Polyfill für Import Maps (macht es kompatibel mit älteren Safari/iOS Versionen) -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <!-- Import Map: Erklärt dem Browser, woher er React & Lucide laden soll -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18",
+        "react-dom/client": "https://esm.sh/react-dom@18/client",
+        "lucide-react": "https://esm.sh/lucide-react?external=react"
+      }
+    }
+    </script>
+    <!-- Babel: Übersetzt JSX direkt im Browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-slate-900 m-0">
+<body class="bg-slate-900 m-0 min-h-screen">
     <div id="root"></div>
-    <script type="module" src="/index.jsx"></script>
+
+    <script>
+        // Debug-Hilfe: Warnung bei lokalem Dateizugriff
+        if (window.location.protocol === 'file:') {
+            document.getElementById('root').innerHTML = `
+                <div style="color: white; font-family: sans-serif; padding: 50px; text-align: center;">
+                    <h1 style="color: #f87171;">Lokale Datei erkannt</h1>
+                    <p>Babel und React-Module funktionieren oft nicht via "Doppelklick".</p>
+                    <p>Bitte nutze einen <strong>lokalen Server</strong> (z.B. Live Server in VS Code) oder lade es auf GitHub hoch.</p>
+                </div>
+            `;
+        }
+    </script>
+
+    <script type="text/babel" data-type="module" src="index.jsx"></script>
 </body>
 </html>
