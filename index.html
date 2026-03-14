@@ -117,8 +117,33 @@
 }
 
 /* Show arrows when an item is in viewing mode */
-.viewing + .arrow {
+.player.is-viewing .arrow {
     display: block;
+}
+
+.nav-menu {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+}
+
+.nav-item {
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 30px;
+    border: 1px solid var(--text-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 1.2rem;
+    transition: background-color 0.3s, color 0.3s;
+    display: inline-block;
+}
+
+.nav-item:hover {
+    background-color: var(--text-color);
+    color: var(--bg-color);
 }
 
 .theme-toggle {
@@ -138,6 +163,10 @@
     </style>
 </head>
 <body>
+    <div class="nav-menu">
+        <a href="schach/index.html" class="nav-item">pixiechess</a>
+    </div>
+
     <div class="header">
         Das ist ein unausgereiftes Interface für ein Interaktives Portfolio-Layout
         </div>
@@ -193,9 +222,11 @@ function scaleUpItem(item) {
             document.querySelector('.grid').style.transform = 'scale(1) translate(0px, 0px)';
             cumulativeTranslateX = 0;
             cumulativeTranslateY = 0;
+            document.querySelector('.player').classList.remove('is-viewing');
         } else {
             // Zoom in to viewing mode
             item.classList.add('viewing');
+            document.querySelector('.player').classList.add('is-viewing');
             const scaleFactor = 5; // Corresponds to the 5x5 grid
             document.querySelector('.grid').style.transform = `scale(${scaleFactor}) translate(${cumulativeTranslateX}px, ${cumulativeTranslateY}px)`;
         }
@@ -213,6 +244,7 @@ function scaleUpItem(item) {
                 img.style.zIndex = '0';
             } 
         });
+        document.querySelector('.player').classList.remove('is-viewing');
 
         // Reset grid transform when selecting a new item
         document.querySelector('.grid').style.transform = 'scale(1) translate(0px, 0px)';
