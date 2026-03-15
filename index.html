@@ -4,163 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grid Centering</title>
-    <style>
-        :root {
-            /* Light Theme Colors */
-            --bg-color: #ffffff;
-            --text-color: #000000;
-            --player-bg-color: #ffffff;
-            --item-bg-color: rgb(221, 219, 228);
-            --arrow-color: #000000;
-        }
-
-        body.dark-mode {
-            /* Dark Theme Colors */
-            --bg-color: #121212;
-            --text-color: #ffffff;
-            --player-bg-color: #282828;
-            --item-bg-color: #404040;
-            --arrow-color: #ffffff;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
-
-        .player {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: var(--player-bg-color);
-            width: 90vw;
-            aspect-ratio: 1 / 1;
-            margin: auto;
-            position: relative;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(5, 1fr);
-            gap: 10px;
-            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        @media (min-width: 700px) {
-            .player {
-                width: 40vw;  
-            }
-
-
-            
-        } 
-
-        .item {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            background-color: var(--item-bg-color);
-            transition: transform 0.3s ease, z-index 0s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            
-        }
-
-        .header {
-            width: 100vw;
-            min-height: 5vh;
-            text-align: center;
-            font-size: 2.4rem;
-            padding: 2rem 0;
-        }
-
-        .item img {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: cover;
-        }
-
-        .arrow {
-    display: none;
-    position: absolute;
-    cursor: pointer;
-    color: var(--arrow-color);
-    /* Add more styles as needed */
-}
-
-.left-arrow {
-    left: -10px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.right-arrow {
-    right: -10px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.up-arrow {
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.down-arrow {
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-/* Show arrows when an item is in viewing mode */
-.player.is-viewing .arrow {
-    display: block;
-}
-
-.nav-menu {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 1000;
-}
-
-.nav-item {
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 30px;
-    border: 1px solid var(--text-color);
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    text-decoration: none;
-    font-size: 1.2rem;
-    transition: background-color 0.3s, color 0.3s;
-    display: inline-block;
-}
-
-.nav-item:hover {
-    background-color: var(--text-color);
-    color: var(--bg-color);
-}
-
-.theme-toggle {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    z-index: 1000;
-    padding: 15px 24px;
-    cursor: pointer;
-    border-radius: 30px;
-    border: 1px solid var(--text-color);
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-size: 2rem;
-}
-
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="nav-menu">
@@ -207,6 +51,10 @@
     </div>
 
     <button class="theme-toggle">Toggle Theme</button>
+
+    <div class="footer">
+        <a href="impressum.html" class="nav-item">Impressum</a>
+    </div>
 
 <script>
      let cumulativeTranslateX = 0;
