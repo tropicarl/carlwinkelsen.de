@@ -172,3 +172,9 @@ body {
     right: 20px;
     z-index: 1000;
 }
+
+.container {
+    max-width: 600px;
+    margin: 0;
+    padding: 0 20px;
+}
