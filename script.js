@@ -156,3 +156,30 @@ document.addEventListener('wheel', (event) => {
     // Reset the flag after a short delay to prevent rapid navigation
     setTimeout(() => { isScrolling = false; }, 500); // 500ms delay
 });
+
+const logo = document.getElementById('logo-wrapper');
+const BASE_SPEED = 0.33;
+const SCROLL_MULTIPLIER = 0.25;
+
+let rotY = 0, lastScroll = 0, scrollDelta = 0, last = null;
+
+window.addEventListener('scroll', () => {
+    scrollDelta = Math.abs(window.scrollY - lastScroll);
+    lastScroll = window.scrollY;
+});
+
+function animate(ts) {
+    if (!last) last = ts;
+    const delta = (ts - last) / 16.67;;
+    last = ts;
+
+    const speed = BASE_SPEED + scrollDelta * SCROLL_MULTIPLIER * delta;
+    rotY = (rotY + speed) % 360;
+    scrollDelta *= 0.85;
+
+    logo.style.transform = `rotateY(${rotY.toFixed(1)}deg)`;
+
+    requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
