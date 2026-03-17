@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grid Centering</title>
+    <title>carlwinkelsen</title>
     <link rel="stylesheet" href="style.css?v=1.0">
+    <link rel="icon" href="./SVG/cwlogodark.svg" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="./SVG/cwlogolight.svg" media="(prefers-color-scheme: dark)">
+    <link rel="apple-touch-icon" href="./favicon-180.png">
 </head>
 <body>
     <header>
     <div class="nav-menu">
         <a href="schach/index.html" class="nav-item">pixiechess</a>
     </div>
-    </header>
+    </header> 
     <section>
-    <div class="header">
-        Das ist ein unausgereiftes Interface für ein Interaktives Portfolio-Layout
-        </div>
-
+ 
     <div class="player">
         <div class="arrow left-arrow">&#8592;</div>  <!-- Left Arrow -->
         <div class="arrow right-arrow">&#8594;</div> <!-- Right Arrow -->
@@ -61,20 +61,41 @@
         <div style="position: fixed; bottom: 24px; left: 24px; perspective: 200px; z-index: 1001;">
             <div id="logo-wrapper" style="transform-style: preserve-3d; width: 60px; height: 60px;">
                 <a href="index.html">
-                    <img src="./SVG/CWlogo_br.svg" alt="Logo" style="width: 60px; height: 60px;">
+                    <img src="./SVG/cwlogo.svg" alt="Logo" style="width: 60px; height: 60px;">
                 </a> 
             </div>
         </div>
     </section>
+    <!-- carlwinkelsen top-right menu -->
+    <div class="cw-menu-wrapper">
+        <span class="cw-brand" id="cw-toggle" data-text="carlwinkelsen">carlwinkelsen</span>
+        <div class="cw-dropdown" id="cw-dropdown">
+            <button class="cw-dropdown-item" data-page="ueber">über</button>
+            <button class="cw-dropdown-item" data-page="dms">DMs</button>
+        </div>
+    </div>
+ 
+    <!-- Overlay: über -->
+    <div class="cw-overlay" id="overlay-ueber">
+        <button class="cw-overlay-close" data-close="ueber">✕</button>
+        <h1>über</h1>
+    </div>
+ 
+    <!-- Overlay: DMs -->
+    <div class="cw-overlay" id="overlay-dms">
+        <button class="cw-overlay-close" data-close="dms">✕</button>
+        <h1>DMs</h1>
+    </div>
+ 
     <div class="bottom-left-corner">
     
         <button class="theme-toggle">Toggle Theme</button>
     </div>
-
+ 
     <div class="footer">
         <a href="impressum.html" class="nav-item">Impressum</a>
     </div>
-
+ 
 <script src="script.js" defer></script>
 </body>
 </html>
