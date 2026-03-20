@@ -1,18 +1,23 @@
 let cumulativeTranslateX = 0;
 let cumulativeTranslateY = 0;
  
-/* ── Hilfsfunktion: wie viele Spalten-Tracks belegt ein Item? ── */
+/* ── Breakpoint-abhängige Track-Anzahl ── */
+function getTotalTracks() {
+    if (window.innerWidth >= 1024) return 10;
+    if (window.innerWidth >= 600)  return 6;
+    return 4;
+}
+ 
+/* ── Wie viele Tracks belegt ein Item? ── */
 function getColSpan(item) {
     if (item.classList.contains('wide')) return 4;
     if (item.classList.contains('tall')) return 2;
-    return 2; // standard (quadratisch)
+    return 2;
 }
  
-/* ── Zoom-Faktor anhand der Item-Breite im 10-Track-Grid ── */
+/* ── Zoom-Faktor: Grid füllt genau den Player ── */
 function getScaleFactor(item) {
-    // 10 Tracks insgesamt; Item nimmt colSpan Tracks ein
-    const colSpan = getColSpan(item);
-    return 10 / colSpan;
+    return getTotalTracks() / getColSpan(item);
 }
  
 function scaleUpItem(item) {
@@ -47,7 +52,6 @@ function scaleUpItem(item) {
         });
         document.querySelector('.player').classList.remove('is-viewing');
  
-        // Reset grid transform when selecting a new item
         document.querySelector('.grid').style.transform = 'scale(1) translate(0px, 0px)';
         cumulativeTranslateX = 0;
         cumulativeTranslateY = 0;
@@ -74,13 +78,8 @@ function centerOnItem(item) {
     const itemRect   = item.getBoundingClientRect();
     const playerRect = document.querySelector('.player').getBoundingClientRect();
  
-    const itemCenterX   = itemRect.left   + itemRect.width  / 2;
-    const itemCenterY   = itemRect.top    + itemRect.height / 2;
-    const playerCenterX = playerRect.left + playerRect.width  / 2;
-    const playerCenterY = playerRect.top  + playerRect.height / 2;
- 
-    cumulativeTranslateX = playerCenterX - itemCenterX;
-    cumulativeTranslateY = playerCenterY - itemCenterY;
+    cumulativeTranslateX = (playerRect.left + playerRect.width  / 2) - (itemRect.left + itemRect.width  / 2);
+    cumulativeTranslateY = (playerRect.top  + playerRect.height / 2) - (itemRect.top  + itemRect.height / 2);
 }
  
 /* ── Navigation ── */
@@ -94,16 +93,10 @@ function navigateToItem(currentItem, direction) {
     } else if (direction === 'prev') {
         nextIndex = (currentIndex - 1 + items.length) % items.length;
     } else {
-        /*
-         * Für up/down: räumliche Nachbarschaft über getBoundingClientRect ermitteln.
-         * Das ist robuster als ein fester gridColumns-Wert, weil Items
-         * unterschiedliche Größen haben können.
-         */
         const curRect = currentItem.getBoundingClientRect();
-        const curCenterX = curRect.left + curRect.width / 2;
+        const curCenterX = curRect.left + curRect.width  / 2;
         const curCenterY = curRect.top  + curRect.height / 2;
  
-        // Alle Items außer dem aktuellen nach Richtung filtern und das nächste finden
         let best = null;
         let bestDist = Infinity;
  
@@ -121,7 +114,6 @@ function navigateToItem(currentItem, direction) {
  
             if (!inDirection) return;
  
-            // Gewichtete Distanz: Vorrang für Items in Hauptrichtung
             const dist = Math.abs(dy) + Math.abs(dx) * 0.4;
             if (dist < bestDist) { bestDist = dist; best = idx; }
         });
@@ -130,38 +122,38 @@ function navigateToItem(currentItem, direction) {
     }
  
     const nextItem = items[nextIndex];
-    nextItem.click(); // select
-    nextItem.click(); // enter viewing mode
+    nextItem.click();
+    nextItem.click();
 }
  
 document.querySelector('.left-arrow').addEventListener('click', () => {
-    let currentItem = document.querySelector('.item.viewing');
-    if (currentItem) navigateToItem(currentItem, 'prev');
+    let c = document.querySelector('.item.viewing');
+    if (c) navigateToItem(c, 'prev');
 });
  
 document.querySelector('.right-arrow').addEventListener('click', () => {
-    let currentItem = document.querySelector('.item.viewing');
-    if (currentItem) navigateToItem(currentItem, 'next');
+    let c = document.querySelector('.item.viewing');
+    if (c) navigateToItem(c, 'next');
 });
  
 document.querySelector('.up-arrow').addEventListener('click', () => {
-    let currentItem = document.querySelector('.item.viewing');
-    if (currentItem) navigateToItem(currentItem, 'up');
+    let c = document.querySelector('.item.viewing');
+    if (c) navigateToItem(c, 'up');
 });
  
 document.querySelector('.down-arrow').addEventListener('click', () => {
-    let currentItem = document.querySelector('.item.viewing');
-    if (currentItem) navigateToItem(currentItem, 'down');
+    let c = document.querySelector('.item.viewing');
+    if (c) navigateToItem(c, 'down');
 });
  
 document.addEventListener('keydown', (event) => {
-    let currentItem = document.querySelector('.item.viewing');
-    if (!currentItem) return;
+    let c = document.querySelector('.item.viewing');
+    if (!c) return;
     switch (event.key.toLowerCase()) {
-        case 'w': navigateToItem(currentItem, 'up');   break;
-        case 'a': navigateToItem(currentItem, 'prev'); break;
-        case 's': navigateToItem(currentItem, 'down'); break;
-        case 'd': navigateToItem(currentItem, 'next'); break;
+        case 'w': navigateToItem(c, 'up');   break;
+        case 'a': navigateToItem(c, 'prev'); break;
+        case 's': navigateToItem(c, 'down'); break;
+        case 'd': navigateToItem(c, 'next'); break;
     }
 });
  
@@ -171,17 +163,37 @@ document.querySelector('.theme-toggle').addEventListener('click', () => {
  
 let isScrolling = false;
 document.addEventListener('wheel', (event) => {
-    let currentItem = document.querySelector('.item.viewing');
-    if (!currentItem || isScrolling) return;
+    let c = document.querySelector('.item.viewing');
+    if (!c || isScrolling) return;
     event.preventDefault();
     isScrolling = true;
-    if (event.deltaY < 0) {
-        navigateToItem(currentItem, 'prev');
-    } else if (event.deltaY > 0) {
-        navigateToItem(currentItem, 'next');
-    }
+    navigateToItem(c, event.deltaY < 0 ? 'prev' : 'next');
     setTimeout(() => { isScrolling = false; }, 500);
 });
+ 
+/* ── Touch-Swipe für Mobile ── */
+let touchStartX = 0;
+let touchStartY = 0;
+ 
+document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+}, { passive: true });
+ 
+document.addEventListener('touchend', (e) => {
+    const c = document.querySelector('.item.viewing');
+    if (!c) return;
+ 
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    const minSwipe = 40;
+ 
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > minSwipe) {
+        navigateToItem(c, dx < 0 ? 'next' : 'prev');
+    } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > minSwipe) {
+        navigateToItem(c, dy < 0 ? 'down' : 'up');
+    }
+}, { passive: true });
  
 /* ── Logo-Rotation ── */
 const logo = document.getElementById('logo-wrapper');
@@ -218,15 +230,13 @@ cwToggle.addEventListener('click', () => {
  
 document.querySelectorAll('.cw-dropdown-item').forEach(btn => {
     btn.addEventListener('click', () => {
-        const page = btn.dataset.page;
-        document.getElementById('overlay-' + page).classList.add('open');
+        document.getElementById('overlay-' + btn.dataset.page).classList.add('open');
         cwDropdown.classList.remove('open');
     });
 });
  
 document.querySelectorAll('.cw-overlay-close').forEach(btn => {
     btn.addEventListener('click', () => {
-        const page = btn.dataset.close;
-        document.getElementById('overlay-' + page).classList.remove('open');
+        document.getElementById('overlay-' + btn.dataset.close).classList.remove('open');
     });
 });

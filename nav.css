@@ -1,0 +1,334 @@
+/* ================================================================
+   NAV.CSS — carlwinkelsen Navigation Mechanic
+   ----------------------------------------------------------------
+   Abhängigkeit: style.css muss vorher geladen sein (CW-Tokens)
+   Verwendet ausschließlich bestehende --cw-* Custom Properties.
+   Nichts hier muss in style.css übernommen werden — diese Datei
+   ist in sich geschlossen und projektspezifisch.
+   ================================================================ */
+
+:root {
+  --cw-nav-logo-size: 55vh; /* ← Einzige Stelle zum Anpassen der Logo-Größe */
+}
+
+@layer cw-nav-mechanic {
+
+  /* ── Body-Basis ──────────────────────────────────────────────── */
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--cw-bg);
+    color: var(--cw-text);
+  }
+
+
+  /* ================================================================
+     PAGES — alle Seiten stapeln sich absolut übereinander
+  ================================================================ */
+
+  .page {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: var(--cw-space-4);
+  }
+
+
+  /* ================================================================
+     STARTSEITE — geteilter Hintergrund
+  ================================================================ */
+
+  #pageHome {
+    z-index: 4;
+    flex-direction: row;
+    gap: 0;
+    pointer-events: none;
+  }
+
+  .home-half {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--cw-space-3);
+    cursor: pointer;
+    pointer-events: auto;
+    will-change: transform;
+    transition:
+      transform var(--cw-dur-page) var(--cw-ease-cinematic),
+      filter     0.22s             var(--cw-ease-out);
+  }
+
+
+  #hGreen  { background: var(--cw-gray-100); }
+  #hPurple { background: var(--cw-gray-800); }
+
+  #hGreen.exit-left   { transform: translateX(-100%); pointer-events: none; }
+  #hGreen.exit-right  { transform: translateX(200%);  pointer-events: none; }
+  #hPurple.exit-left  { transform: translateX(-200%); pointer-events: none; }
+  #hPurple.exit-right { transform: translateX(100%);  pointer-events: none; }
+
+  .home-divider {
+    position: absolute;
+    left: 50%; top: 8%; bottom: 8%;
+    width: 1px;
+    background: var(--cw-border);
+    transform: translateX(-50%);
+    pointer-events: none;
+    transition: opacity calc(var(--cw-dur-page) * 0.4) var(--cw-ease-cinematic);
+  }
+  .home-divider.hide { opacity: 0; }
+
+  .home-label {
+    font-family: var(--cw-font-display);
+    font-size: var(--cw-text-3xl);
+    font-weight: 700;
+    letter-spacing: var(--cw-tracking-tight);
+    line-height: var(--cw-leading-tight);
+    text-transform: uppercase;
+    user-select: none;
+    pointer-events: none;
+  }
+  #hGreen  .home-label { color: var(--cw-gray-400); }
+  #hPurple .home-label { color: var(--cw-gray-600); }
+
+  .home-hint {
+    font-family: var(--cw-font-body);
+    font-size: var(--cw-text-2xs);
+    letter-spacing: var(--cw-tracking-wider);
+    text-transform: uppercase;
+    user-select: none;
+    pointer-events: none;
+    animation: cw-nav-pulse 2.2s ease-in-out infinite;
+  }
+  #hGreen  .home-hint { color: var(--cw-text-faint); }
+  #hPurple .home-hint { color: var(--cw-gray-600); }
+
+
+  /* ================================================================
+     UNTERSEITEN
+  ================================================================ */
+
+  #pageGreen {
+    background: var(--cw-gray-50);
+    z-index: 3;
+    transform: translateX(-100%);
+    transition: transform var(--cw-dur-page) var(--cw-ease-cinematic);
+  }
+  #pageGreen.enter { transform: translateX(0); }
+
+  #pagePurple {
+    background: var(--cw-gray-900);
+    z-index: 3;
+    transform: translateX(100%);
+    transition: transform var(--cw-dur-page) var(--cw-ease-cinematic);
+  }
+  #pagePurple.enter { transform: translateX(0); }
+
+  #pageRed {
+    background: var(--cw-black);
+    z-index: 2;
+    clip-path: inset(0 50% 0 50%);
+    transition: clip-path 0.65s var(--cw-ease-cinematic);
+  }
+  #pageRed.open { clip-path: inset(0 0% 0 0%); }
+
+
+  /* ================================================================
+     SEITEN-TYPOGRAFIE
+  ================================================================ */
+
+  .page-title {
+    font-family: var(--cw-font-display);
+    font-size: var(--cw-text-4xl);
+    font-weight: 800;
+    letter-spacing: var(--cw-tracking-tight);
+    line-height: var(--cw-leading-tight);
+    text-transform: uppercase;
+    user-select: none;
+    pointer-events: none;
+    margin: 0;
+  }
+
+  .page-sub {
+    font-family: var(--cw-font-body);
+    font-size: var(--cw-text-sm);
+    font-weight: 300;
+    letter-spacing: var(--cw-tracking-wider);
+    text-transform: uppercase;
+    user-select: none;
+    pointer-events: none;
+    margin: 0;
+  }
+
+  .page-hint {
+    position: absolute;
+    bottom: var(--cw-space-6);
+    font-family: var(--cw-font-body);
+    font-size: var(--cw-text-2xs);
+    letter-spacing: var(--cw-tracking-wider);
+    text-transform: uppercase;
+    pointer-events: none;
+    animation: cw-nav-pulse 2.2s ease-in-out infinite;
+  }
+
+  #pageGreen  .page-title { color: var(--cw-gray-800); }
+  #pageGreen  .page-sub   { color: var(--cw-text-muted); }
+  #pageGreen  .page-hint  { color: var(--cw-text-faint); }
+
+  #pagePurple .page-title { color: var(--cw-gray-100); }
+  #pagePurple .page-sub   { color: var(--cw-gray-600); }
+  #pagePurple .page-hint  { color: var(--cw-gray-600); }
+
+  #pageRed    .page-title { color: var(--cw-accent); }
+  #pageRed    .page-sub   { color: var(--cw-gray-600); }
+  #pageRed    .page-hint  { color: var(--cw-gray-600); }
+
+
+  /* ================================================================
+     LOGO — rollendes Navigationselement
+     
+     ZENTRIERUNGS-STRATEGIE:
+     #logoAnchor ist fixed, top:50%, left:50% — exakt die Bildschirmmitte.
+     #logoWrap und die Split-Hälften werden per margin-left/margin-top
+     um jeweils -50% der Logo-Größe verschoben, sodass der Mittelpunkt
+     des Logos immer mit dem Ankerpunkt übereinstimmt.
+     JS setzt nur noch den left-Offset als vw-Wert, der den Abstand
+     vom Ankerpunkt (Bildschirmmitte) zur gewünschten X-Position beschreibt.
+     --cw-nav-logo-size kann frei geändert werden — alles zentriert sich
+     automatisch neu, ohne etwas in JS anfassen zu müssen.
+  ================================================================ */
+
+  /* Anker: fixiert in der exakten Bildschirmmitte */
+  #logoAnchor {
+    position: fixed;
+    top: 27.5vh;
+    left: 50%;
+    width: 0;
+    height: 0;
+    z-index: var(--cw-z-overlay);
+    pointer-events: none;
+  }
+
+  /* logoWrap: left=0 bedeutet Ankermitte.
+     margin verschiebt den Ursprung auf die obere linke Ecke des Logos. */
+  #logoWrap {
+    position: absolute;
+    width: var(--cw-nav-logo-size);
+    height: var(--cw-nav-logo-size);
+    /* Zentriert relativ zum Ankerpunkt (Bildschirmmitte) */
+    margin-left: calc(var(--cw-nav-logo-size) / -2);
+    margin-top:  calc(var(--cw-nav-logo-size) / -2);
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  #logoWrap.no-click {
+    pointer-events: none;
+    cursor: default;
+  }
+
+  /* Split-Hälften: jede ist eine halbe Breite × volle Höhe.
+     margin-top zentriert sie vertikal um den Ankerpunkt. */
+  #splitLeft,
+  #splitRight {
+    position: absolute;
+    width:  calc(var(--cw-nav-logo-size) / 2);
+    height: var(--cw-nav-logo-size);
+    margin-top: calc(var(--cw-nav-logo-size) / -2);
+    overflow: hidden;
+    display: none;
+    pointer-events: none;
+  }
+  #splitLeft.clickable,
+  #splitRight.clickable {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  /* Ball-Form */
+  .ball {
+    border-radius: 50%;
+    background: transparent;
+    position: relative;
+    overflow: visible;
+  }
+  #logoWrap .ball {
+    width: var(--cw-nav-logo-size);
+    height: var(--cw-nav-logo-size);
+  }
+
+  /* half-ball: voller Ball hinter dem Clip-Fenster der Hälfte.
+     splitRight verschiebt den Ball um eine halbe Breite nach links,
+     sodass die rechte Hälfte des Balls sichtbar ist. */
+  .half-ball {
+    width: var(--cw-nav-logo-size);
+    height: var(--cw-nav-logo-size);
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  #splitRight .half-ball {
+    left: calc(var(--cw-nav-logo-size) / -2);
+  }
+
+  /* Logo-SVG zentriert im Ball */
+  .ball img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* Glow-Puls wenn klickbar */
+  #logoWrap:not(.no-click),
+  #splitLeft.clickable,
+  #splitRight.clickable {
+    animation: cw-nav-glow 1.8s ease-in-out infinite;
+  }
+
+  /* Tooltip */
+  #logoTip {
+    position: fixed;
+    z-index: var(--cw-z-dropdown);
+    font-family: var(--cw-font-body);
+    font-size: var(--cw-text-2xs);
+    letter-spacing: var(--cw-tracking-wider);
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    background: var(--cw-gray-900);
+    color: var(--cw-text-dark);
+    padding: 4px 10px;
+    border-radius: var(--cw-r-pill);
+    opacity: 0;
+    transition: opacity var(--cw-dur-fast) var(--cw-ease-out);
+  }
+  #logoTip.show { opacity: 1; }
+
+
+  /* ================================================================
+     KEYFRAMES
+  ================================================================ */
+
+  @keyframes cw-nav-pulse {
+    0%, 100% { opacity: 0.4; transform: translateY(0); }
+    50%       { opacity: 1;   transform: translateY(-4px); }
+  }
+
+  @keyframes cw-nav-glow {
+    0%, 100% { filter: drop-shadow(0 0 0px var(--cw-accent-glow)); }
+    50%       { filter: drop-shadow(0 0 8px var(--cw-accent-glow)); }
+  }
+
+}
