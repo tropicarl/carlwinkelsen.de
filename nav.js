@@ -28,7 +28,7 @@
   const splitRight = document.getElementById('splitRight');
   const logoTip    = document.getElementById('logoTip');
 
-  /* ── Logo-Größe ── */
+  /* ── Logo-Größe & Split-Ratio ── */
   function logoPx() {
     const raw = getComputedStyle(document.documentElement)
       .getPropertyValue('--cw-nav-logo-size').trim();
@@ -39,9 +39,17 @@
     const size = parseFloat(getComputedStyle(logoWrap).width);
     return isNaN(size) ? 120 : size;
   }
-  function logoVW()  { return logoPx() / window.innerWidth * 100; }
-  function halfVW()  { return logoVW() / 2; }
-  function thirdVW() { return logoVW() / 3; }
+  function splitRatio()  {
+    return parseFloat(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--cw-split-ratio')
+    );
+  }
+  function logoVW()      { return logoPx() / window.innerWidth * 100; }
+  function leftHalfVW()  { return logoVW() * splitRatio(); }
+  function rightHalfVW() { return logoVW() * (1 - splitRatio()); }
+  function halfVW()      { return logoVW() / 2; }
+  function thirdVW()     { return logoVW() / 3; }
 
   /* ── State ── */
   let state     = 'home';
@@ -72,20 +80,13 @@
   function edgeRight()       { return  50 - thirdVW(); }
   function edgeLeft()        { return -50 + thirdVW(); }
   function splitLeftEndPx() {
-    /* style.left der linken Hälfte = centerOffset() - halfVW() (in vw, relativ zu Ankerpunkt).
-       Ziel: linke Kante soll bei -50vw + ein Sliver stehen.
-       Δ = Ziel - Start, alles in vw, dann → px */
-    const startVW  = centerOffset() - halfVW();
-    const targetVW = -50 - halfVW() / 6;
+    const startVW  = centerOffset() - leftHalfVW();
+    const targetVW = -50 - leftHalfVW() / 6;
     return (targetVW - startVW) / 100 * window.innerWidth;
   }
   function splitRightEndPx() {
-    /* style.left der rechten Hälfte = centerOffset() (in vw, relativ zu Ankerpunkt).
-       Die Hälfte ist halfVW() breit. Ihr rechter Rand soll bei +50vw + ein Sliver stehen.
-       → linke Kante (Ziel) = 50 - halfVW + halfVW/6 = 50 - halfVW*(5/6)
-       Δ = Ziel - Start (Start = 0) */
     const startVW  = centerOffset();
-    const targetVW = 50 - halfVW() * (5 / 6);
+    const targetVW = 50 - rightHalfVW() * (5 / 6);
     return (targetVW - startVW) / 100 * window.innerWidth;
   }
 
@@ -96,7 +97,7 @@
   function getTX(el)         { return new DOMMatrix(getComputedStyle(el).transform).m41; }
 
   function initSplits() {
-    splitLeft.style.left       = (centerOffset() - halfVW()) + 'vw';
+    splitLeft.style.left       = (centerOffset() - leftHalfVW()) + 'vw';
     splitRight.style.left      = centerOffset() + 'vw';
     splitLeft.style.transform  = 'translateX(0)';
     splitRight.style.transform = 'translateX(0)';
@@ -237,9 +238,7 @@
 
   const initialState = URL_TO_STATE[window.location.pathname] || 'home';
   if (initialState !== 'home') {
-    /* Direktaufruf einer Unterseite: mit Einflug-Animation */
     landOnState(initialState, true);
-    /* State im History-Eintrag vermerken */
     history.replaceState({ state: initialState }, '', window.location.pathname);
   } else {
     history.replaceState({ state: 'home' }, '', '/');
@@ -251,7 +250,6 @@
     const target = (e.state && e.state.state) || 'home';
     if (target === state) return;
 
-    /* Schneller Reset auf Home, dann weiter zur Zielseite */
     resetToHome(false);
     if (target !== 'home') landOnState(target, true);
     state = target;
@@ -284,10 +282,10 @@
     if (state !== 'green' && state !== 'purple') return;
     const offsetVW = parseFloat(logoWrap.style.left);
     if (state === 'green') {
-      logoTip.style.right = (50 - offsetVW + halfVW() + 1) + 'vw';
+      logoTip.style.right = (50 - offsetVW + leftHalfVW() + 1) + 'vw';
       logoTip.style.left  = 'auto';
     } else {
-      logoTip.style.left  = (50 + offsetVW + halfVW() + 1) + 'vw';
+      logoTip.style.left  = (50 + offsetVW + rightHalfVW() + 1) + 'vw';
       logoTip.style.right = 'auto';
     }
     logoTip.style.top = '50vh';

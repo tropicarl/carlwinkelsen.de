@@ -8,7 +8,8 @@
    ================================================================ */
 
 :root {
-  --cw-nav-logo-size: 55vh; /* ← Einzige Stelle zum Anpassen der Logo-Größe */
+  --cw-nav-logo-size: 55vh;  /* ← Einzige Stelle zum Anpassen der Logo-Größe */
+  --cw-split-ratio: 0.4565;   /* C/W-Grenze: gemessen + viewBox-korrigiert      */
 }
 
 @layer cw-nav-mechanic {
@@ -63,7 +64,6 @@
       transform var(--cw-dur-page) var(--cw-ease-cinematic),
       filter     0.22s             var(--cw-ease-out);
   }
-
 
   #hGreen  { background: var(--cw-gray-100); }
   #hPurple { background: var(--cw-gray-800); }
@@ -192,19 +192,15 @@
 
   /* ================================================================
      LOGO — rollendes Navigationselement
-     
+
      ZENTRIERUNGS-STRATEGIE:
-     #logoAnchor ist fixed, top:50%, left:50% — exakt die Bildschirmmitte.
-     #logoWrap und die Split-Hälften werden per margin-left/margin-top
-     um jeweils -50% der Logo-Größe verschoben, sodass der Mittelpunkt
-     des Logos immer mit dem Ankerpunkt übereinstimmt.
-     JS setzt nur noch den left-Offset als vw-Wert, der den Abstand
-     vom Ankerpunkt (Bildschirmmitte) zur gewünschten X-Position beschreibt.
-     --cw-nav-logo-size kann frei geändert werden — alles zentriert sich
-     automatisch neu, ohne etwas in JS anfassen zu müssen.
+     #logoAnchor ist fixed, top:27.5vh, left:50%.
+     #logoWrap wird per margin-left/margin-top um -50% verschoben.
+     JS setzt nur den left-Offset als vw-Wert relativ zur Bildschirmmitte.
+     --cw-nav-logo-size und --cw-split-ratio können frei geändert werden —
+     alles zentriert sich automatisch neu.
   ================================================================ */
 
-  /* Anker: fixiert in der exakten Bildschirmmitte */
   #logoAnchor {
     position: fixed;
     top: 27.5vh;
@@ -215,35 +211,36 @@
     pointer-events: none;
   }
 
-  /* logoWrap: left=0 bedeutet Ankermitte.
-     margin verschiebt den Ursprung auf die obere linke Ecke des Logos. */
   #logoWrap {
     position: absolute;
     width: var(--cw-nav-logo-size);
     height: var(--cw-nav-logo-size);
-    /* Zentriert relativ zum Ankerpunkt (Bildschirmmitte) */
     margin-left: calc(var(--cw-nav-logo-size) / -2);
     margin-top:  calc(var(--cw-nav-logo-size) / -2);
     pointer-events: auto;
     cursor: pointer;
+    transform-origin: center calc(50% - 4.26%);
   }
   #logoWrap.no-click {
     pointer-events: none;
     cursor: default;
   }
 
-  /* Split-Hälften: jede ist eine halbe Breite × volle Höhe.
-     margin-top zentriert sie vertikal um den Ankerpunkt. */
+  /* Split-Hälften — gemeinsame Eigenschaften */
   #splitLeft,
   #splitRight {
     position: absolute;
-    width:  calc(var(--cw-nav-logo-size) / 2);
     height: var(--cw-nav-logo-size);
     margin-top: calc(var(--cw-nav-logo-size) / -2);
     overflow: hidden;
     display: none;
     pointer-events: none;
   }
+
+  /* Breiten asymmetrisch nach Split-Ratio */
+  #splitLeft  { width: calc(var(--cw-nav-logo-size) * var(--cw-split-ratio)); }
+  #splitRight { width: calc(var(--cw-nav-logo-size) * (1 - var(--cw-split-ratio))); }
+
   #splitLeft.clickable,
   #splitRight.clickable {
     pointer-events: auto;
@@ -260,11 +257,12 @@
   #logoWrap .ball {
     width: var(--cw-nav-logo-size);
     height: var(--cw-nav-logo-size);
+    transform-origin: center calc(50% - 4.26%);
   }
 
-  /* half-ball: voller Ball hinter dem Clip-Fenster der Hälfte.
-     splitRight verschiebt den Ball um eine halbe Breite nach links,
-     sodass die rechte Hälfte des Balls sichtbar ist. */
+  /* half-ball: voller Ball hinter dem Clip-Fenster der jeweiligen Hälfte.
+     splitRight verschiebt den Ball um die linke Breite nach links,
+     sodass genau die rechte Hälfte (W) sichtbar ist. */
   .half-ball {
     width: var(--cw-nav-logo-size);
     height: var(--cw-nav-logo-size);
@@ -273,7 +271,7 @@
     left: 0;
   }
   #splitRight .half-ball {
-    left: calc(var(--cw-nav-logo-size) / -2);
+    left: calc(var(--cw-nav-logo-size) * var(--cw-split-ratio) * -1);
   }
 
   /* Logo-SVG zentriert im Ball */
