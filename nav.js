@@ -81,11 +81,11 @@
   }
   function splitRightEndPx() {
     /* style.left der rechten Hälfte = centerOffset() (in vw, relativ zu Ankerpunkt).
-       Die rechte Hälfte ist halfVW() breit. Ihr rechter Rand sitzt bei centerOffset() + halfVW().
-       Ziel: linke Kante soll bei 50vw - ein Sliver stehen, sodass nur der Sliver sichtbar bleibt.
-       Δ = Ziel - Start */
-    const startVW  = centerOffset() + halfVW();
-    const targetVW = 50 - halfVW() / 6;
+       Die Hälfte ist halfVW() breit. Ihr rechter Rand soll bei +50vw + ein Sliver stehen.
+       → linke Kante (Ziel) = 50 - halfVW + halfVW/6 = 50 - halfVW*(5/6)
+       Δ = Ziel - Start (Start = 0) */
+    const startVW  = centerOffset();
+    const targetVW = 50 - halfVW() * (5 / 6);
     return (targetVW - startVW) / 100 * window.innerWidth;
   }
 
